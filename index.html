@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Özışık Süt Ürünleri - Beyaz Peynir Paketleme</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root{--bg0:#ffffff;--bg1:#f8f0f0;--bg2:#fff5f5;--bg3:#ffe8e8;--ab:#c0192b;--ac:#d42a3a;--ae:#2e7d32;--aa:#b8860b;--ar:#c0192b;--ap:#8b0000;--ak:#d81b60;--at:#2e7d32;--t1:#1a1a1a;--t2:#4a3030;--t3:#7a5555;--bd:#e0c0c0;--bd2:#d4a0a0;--o1:#c0192b;--o2:#8b0000}
         *{margin:0;padding:0;box-sizing:border-box}
@@ -184,8 +187,33 @@
 </head>
 <body>
 
+<!-- LOGIN PAGE -->
+<div id="loginPage" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;padding:20px">
+    <div style="text-align:center;margin-bottom:30px">
+        <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:6px;text-transform:uppercase;color:#c0192b;margin-bottom:8px">Özışık Süt Ürünleri</div>
+        <h1 style="font-size:28px;font-weight:800;background:linear-gradient(135deg,#1a1a1a,#c0192b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Outfit',sans-serif">Paketleme Yönetim Sistemi</h1>
+        <div style="font-size:12px;color:#7a5555;margin-top:4px">Giriş yapınız</div>
+    </div>
+    <div style="width:340px;padding:28px;background:#fff;border:2px solid #e0c0c0;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08)">
+        <div style="margin-bottom:16px">
+            <label style="display:block;font-size:11px;font-weight:600;color:#4a3030;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">E-posta</label>
+            <input type="email" id="loginEmail" placeholder="ornek@ozisik.com" style="width:100%;padding:10px 14px;border:2px solid #e0c0c0;border-radius:8px;font-family:'Outfit';font-size:14px;color:#1a1a1a;outline:none;transition:.2s" onfocus="this.style.borderColor='#c0192b'" onblur="this.style.borderColor='#e0c0c0'"/>
+        </div>
+        <div style="margin-bottom:20px">
+            <label style="display:block;font-size:11px;font-weight:600;color:#4a3030;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Şifre</label>
+            <input type="password" id="loginPass" placeholder="••••••••" style="width:100%;padding:10px 14px;border:2px solid #e0c0c0;border-radius:8px;font-family:'Outfit';font-size:14px;color:#1a1a1a;outline:none;transition:.2s" onfocus="this.style.borderColor='#c0192b'" onblur="this.style.borderColor='#e0c0c0'" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <button onclick="doLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#c0192b,#8b0000);color:#fff;border:none;border-radius:10px;font-family:'Outfit';font-size:15px;font-weight:700;cursor:pointer;transition:.2s;box-shadow:0 4px 12px rgba(192,25,43,.3)" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">Giriş Yap</button>
+        <div id="loginError" style="margin-top:12px;text-align:center;font-size:11px;color:#c0192b;min-height:16px"></div>
+        <div style="margin-top:12px;text-align:center">
+            <a href="#" onclick="resetPassword();return false" style="font-size:10px;color:#7a5555;text-decoration:none">Şifremi unuttum</a>
+        </div>
+    </div>
+    <div id="loginUserInfo" style="margin-top:16px;font-size:10px;color:#7a5555;text-align:center"></div>
+</div>
+
 <!-- LANDING PAGE -->
-<div id="landingPage" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;padding:20px">
+<div id="landingPage" style="min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;background:#fff;padding:20px">
     <div style="text-align:center;margin-bottom:50px">
         <div style="font-family:'Space Mono',monospace;font-size:14px;letter-spacing:8px;text-transform:uppercase;color:#c0192b;margin-bottom:10px">Özışık Süt Ürünleri</div>
         <h1 style="font-size:36px;font-weight:800;background:linear-gradient(135deg,#1a1a1a,#c0192b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Outfit',sans-serif">Paketleme Yönetim Sistemi</h1>
@@ -208,11 +236,18 @@
         </div>
     </div>
     <div id="landingAlert" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999"></div>
+    <div id="landingUserBar" style="position:fixed;top:16px;right:16px;display:flex;align-items:center;gap:8px;font-size:11px;color:#7a5555"></div>
 </div>
 
 <!-- MAIN APP (gizli başlar) -->
 <div class="app" id="mainApp" style="display:none">
-    <div style="margin-bottom:10px"><button class="btn bo bsm" onclick="goHome()" style="font-size:12px;padding:6px 14px">← Ana Sayfa</button></div>
+    <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <button class="btn bo bsm" onclick="goHome()" style="font-size:12px;padding:6px 14px">← Ana Sayfa</button>
+        <div style="display:flex;align-items:center;gap:8px">
+            <span id="appUserInfo" style="font-size:10px;color:var(--t3)"></span>
+            <button class="btn bo bsm" onclick="doLogout()" style="font-size:10px;padding:4px 10px;color:var(--ar)">Çıkış</button>
+        </div>
+    </div>
     <div class="hdr">
         <div class="co">Özışık Süt Ürünleri</div>
         <h1>Beyaz Peynir Paketleme Yönetim Sistemi</h1>
@@ -570,6 +605,28 @@
             </div>
             <div style="margin-top:12px"><button class="btn bp" onclick="saveSett()">💾 Kaydet</button><button class="btn bd" style="margin-left:6px" onclick="resetAll()">🔄 Sıfırla</button></div>
         </div>
+        <!-- Kullanıcı Yönetimi (Sadece Admin) -->
+        <div class="cd" id="userMgmtSection">
+            <div class="ct"><div class="ic" style="background:rgba(192,25,43,.12);color:var(--ab)">👤</div> Kullanıcı Yönetimi</div>
+            <div style="font-size:10px;color:var(--t3);margin-bottom:10px">Sisteme erişim yetkisi olan kullanıcıları yönetin. Yeni kullanıcı eklemek için Firebase Console'dan Authentication bölümünü kullanın.</div>
+            <div id="userList"></div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
+                <div style="font-size:11px;font-weight:600;margin-bottom:6px">Yeni Kullanıcı Rolü Ata</div>
+                <div class="fr">
+                    <div class="fg" style="min-width:200px"><label>E-posta</label><input type="email" id="newUserEmail" placeholder="kullanici@ozisik.com"/></div>
+                    <div class="fg" style="min-width:140px"><label>Rol</label>
+                        <select id="newUserRole">
+                            <option value="admin">Admin</option>
+                            <option value="sorumlu">Bölüm Sorumlusu</option>
+                            <option value="tekniker" selected>Gıda Teknikeri</option>
+                            <option value="personel">Personel</option>
+                        </select>
+                    </div>
+                    <div class="fg" style="min-width:140px"><label>Ad Soyad</label><input type="text" id="newUserName" placeholder="İsim"/></div>
+                    <div class="fg"><button class="btn bs bsm" onclick="addUserRole()" style="margin-top:18px">➕ Rol Ata</button></div>
+                </div>
+            </div>
+        </div>
         <div class="cd"><div class="ct"><div class="ic" style="background:rgba(192,25,43,.12);color:var(--ar)">💾</div> Veri</div>
             <div class="bg"><button class="btn bo" onclick="expData()">📥 Dışa Aktar</button><button class="btn bo" onclick="document.getElementById('impF').click()">📤 İçe Aktar</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impData(event)"/></div>
         </div>
@@ -686,8 +743,166 @@ function init(){
 }
 
 function renderAll(){renderStats();renderProc();renderMCfgUI();renderDilimUI();renderClean();renderMgmt();renderPers();renderAbsent();renderScales();renderMachines();renderHist();renderFloor();renderISGForms();renderProdSummary();renderProdHistory()}
-function save(){localStorage.setItem('ozisik_v6',JSON.stringify(S))}
-function load(){try{const d=JSON.parse(localStorage.getItem('ozisik_v6'));if(d)S={...S,...d}}catch(e){}}
+
+// ===== FIREBASE =====
+const firebaseConfig={
+    apiKey:"AIzaSyBPdNCfz3SVvNQM717TnbnkUZnKouaEnRc",
+    authDomain:"ozisik-paketleme.firebaseapp.com",
+    projectId:"ozisik-paketleme",
+    storageBucket:"ozisik-paketleme.firebasestorage.app",
+    messagingSenderId:"711936990522",
+    appId:"1:711936990522:web:9651b8adbf2ae691160403"
+};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+db.enablePersistence().catch(()=>{});
+
+let currentUser=null;
+let currentUserRole=null;
+let firestoreReady=false;
+const ROLES={admin:'Admin',sorumlu:'Bölüm Sorumlusu',tekniker:'Gıda Teknikeri (Kalite)',personel:'Personel'};
+const ROLE_TABS={
+    admin:['dash','assign','pers','isg','prod','equip','rapor','hist','sett'],
+    sorumlu:['dash','assign','pers','isg','prod','equip','rapor','hist','sett'],
+    tekniker:['dash','assign','pers','isg','prod','equip','hist'],
+    personel:['dash','hist']
+};
+
+function save(){
+    // Hem localStorage hem Firestore'a kaydet
+    localStorage.setItem('ozisik_v6',JSON.stringify(S));
+    if(firestoreReady){
+        db.collection('appData').doc('beyazPeynir').set(S).catch(e=>console.warn('Firestore save error:',e));
+    }
+}
+
+function load(){
+    try{const d=JSON.parse(localStorage.getItem('ozisik_v6'));if(d)S={...S,...d}}catch(e){}
+}
+
+async function loadFromFirestore(){
+    try{
+        const doc=await db.collection('appData').doc('beyazPeynir').get();
+        if(doc.exists){
+            const d=doc.data();
+            S={...S,...d};
+            localStorage.setItem('ozisik_v6',JSON.stringify(S));
+            firestoreReady=true;
+            return true;
+        }
+        firestoreReady=true;
+        return false;
+    }catch(e){
+        console.warn('Firestore load error:',e);
+        firestoreReady=true;
+        return false;
+    }
+}
+
+// Gerçek zamanlı dinleme
+function listenToFirestore(){
+    db.collection('appData').doc('beyazPeynir').onSnapshot(doc=>{
+        if(doc.exists&&doc.metadata.hasPendingWrites===false){
+            const d=doc.data();
+            S={...S,...d};
+            localStorage.setItem('ozisik_v6',JSON.stringify(S));
+            renderAll();
+        }
+    },err=>console.warn('Snapshot error:',err));
+}
+
+// ===== AUTH =====
+function doLogin(){
+    const email=document.getElementById('loginEmail').value.trim();
+    const pass=document.getElementById('loginPass').value;
+    if(!email||!pass){document.getElementById('loginError').textContent='E-posta ve şifre girin';return}
+    document.getElementById('loginError').textContent='Giriş yapılıyor...';
+    auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+        const msgs={'auth/user-not-found':'Kullanıcı bulunamadı','auth/wrong-password':'Şifre hatalı','auth/invalid-email':'Geçersiz e-posta','auth/invalid-credential':'E-posta veya şifre hatalı','auth/too-many-requests':'Çok fazla deneme. Lütfen bekleyin.'};
+        document.getElementById('loginError').textContent=msgs[err.code]||'Giriş hatası: '+err.message;
+    });
+}
+
+function doLogout(){
+    if(confirm('Çıkış yapmak istediğinize emin misiniz?')){
+        auth.signOut();
+    }
+}
+
+function resetPassword(){
+    const email=document.getElementById('loginEmail').value.trim();
+    if(!email){document.getElementById('loginError').textContent='Önce e-posta adresinizi girin';return}
+    auth.sendPasswordResetEmail(email).then(()=>{
+        document.getElementById('loginError').innerHTML='<span style="color:#2e7d32">Şifre sıfırlama bağlantısı gönderildi!</span>';
+    }).catch(err=>{
+        document.getElementById('loginError').textContent='Hata: '+err.message;
+    });
+}
+
+async function getUserRole(uid){
+    try{
+        // Önce UID ile dene
+        let doc=await db.collection('users').doc(uid).get();
+        if(doc.exists)return doc.data().role||'personel';
+        // Email ile dene
+        if(currentUser&&currentUser.email){
+            const emailKey=currentUser.email.replace(/[@.]/g,'_');
+            doc=await db.collection('users').doc(emailKey).get();
+            if(doc.exists){
+                // UID'yi de kaydet
+                await db.collection('users').doc(uid).set(doc.data(),{merge:true});
+                return doc.data().role||'personel';
+            }
+        }
+        return 'personel';
+    }catch(e){return 'personel'}
+}
+
+function applyRoleRestrictions(role){
+    const allowed=ROLE_TABS[role]||ROLE_TABS.personel;
+    document.querySelectorAll('.tb').forEach(btn=>{
+        const tab=btn.getAttribute('onclick')?.match(/stab\('(\w+)'/)?.[1];
+        if(tab&&!allowed.includes(tab)){
+            btn.style.display='none';
+        }else{
+            btn.style.display='';
+        }
+    });
+}
+
+function showUserInfo(){
+    const roleLabel=ROLES[currentUserRole]||currentUserRole;
+    const email=currentUser?.email||'';
+    const name=email.split('@')[0];
+    const info=`👤 ${name} · <b>${roleLabel}</b>`;
+    const bar=document.getElementById('landingUserBar');
+    if(bar)bar.innerHTML=info+` <button onclick="doLogout()" style="padding:4px 10px;background:rgba(192,25,43,.1);border:1px solid rgba(192,25,43,.2);border-radius:6px;color:#c0192b;font-family:Outfit;font-size:10px;cursor:pointer;border:none;font-weight:600">Çıkış</button>`;
+    const appInfo=document.getElementById('appUserInfo');
+    if(appInfo)appInfo.innerHTML=info;
+}
+
+// Auth state listener
+auth.onAuthStateChanged(async user=>{
+    if(user){
+        currentUser=user;
+        currentUserRole=await getUserRole(user.uid);
+        // Login sayfasını gizle, landing göster
+        document.getElementById('loginPage').style.display='none';
+        document.getElementById('landingPage').style.display='flex';
+        document.getElementById('mainApp').style.display='none';
+        showUserInfo();
+        // Firestore'dan yükle
+        await loadFromFirestore();
+        listenToFirestore();
+    }else{
+        currentUser=null;
+        currentUserRole=null;
+        document.getElementById('loginPage').style.display='flex';
+        document.getElementById('landingPage').style.display='none';
+        document.getElementById('mainApp').style.display='none';
+    }
+});
 
 // ===== STATS =====
 function renderStats(){
@@ -1609,7 +1824,79 @@ function renderHist(){
 
 // ===== SETTINGS =====
 function saveSett(){S.settings.maxPerDesk=parseInt(document.getElementById('sMaxPD').value)||10;S.settings.maxRepeat=parseInt(document.getElementById('sMaxR').value)||2;save();renderAll();msg('Kaydedildi','s')}
-function resetAll(){if(confirm('Tüm veriler silinecek?')){localStorage.removeItem('ozisik_v6');location.reload()}}
+function resetAll(){if(confirm('Tüm veriler silinecek?')){localStorage.removeItem('ozisik_v6');if(firestoreReady)db.collection('appData').doc('beyazPeynir').delete().catch(()=>{});location.reload()}}
+
+// ===== USER MANAGEMENT =====
+async function loadUserList(){
+    if(currentUserRole!=='admin'){
+        const sec=document.getElementById('userMgmtSection');
+        if(sec)sec.style.display='none';
+        return;
+    }
+    try{
+        const snap=await db.collection('users').get();
+        const users=[];
+        snap.forEach(doc=>users.push({uid:doc.id,...doc.data()}));
+        const roleColors={admin:'#c0192b',sorumlu:'#6b7280',tekniker:'#65a30d',personel:'#b8860b'};
+        let h='<div style="display:grid;gap:6px">';
+        users.forEach(u=>{
+            const rc=roleColors[u.role]||'#999';
+            h+=`<div style="padding:8px 12px;background:var(--bg1);border:1px solid var(--bd);border-left:4px solid ${rc};border-radius:6px;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <div style="font-weight:600;font-size:12px">${u.name||u.email||u.uid}</div>
+                    <div style="font-size:9px;color:var(--t3)">${u.email||''} · <span style="color:${rc};font-weight:600">${ROLES[u.role]||u.role}</span></div>
+                </div>
+                <select onchange="changeUserRole('${u.uid}',this.value)" style="padding:4px 8px;font-size:10px;border-radius:4px;border:1px solid var(--bd)">
+                    ${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}
+                </select>
+            </div>`;
+        });
+        h+='</div>';
+        document.getElementById('userList').innerHTML=h;
+    }catch(e){
+        document.getElementById('userList').innerHTML='<div style="font-size:10px;color:var(--ar)">Kullanıcı listesi yüklenemedi</div>';
+    }
+}
+
+async function changeUserRole(uid,newRole){
+    try{
+        await db.collection('users').doc(uid).update({role:newRole});
+        msg('Rol güncellendi','s');
+        loadUserList();
+    }catch(e){msg('Hata: '+e.message,'w')}
+}
+
+async function addUserRole(){
+    const email=document.getElementById('newUserEmail').value.trim();
+    const role=document.getElementById('newUserRole').value;
+    const name=document.getElementById('newUserName').value.trim();
+    if(!email)return msg('E-posta girin','w');
+    try{
+        // UID'yi bilmiyoruz, email ile kaydet
+        await db.collection('users').doc(email.replace(/[@.]/g,'_')).set({email,role,name,createdAt:new Date().toISOString()},{merge:true});
+        document.getElementById('newUserEmail').value='';
+        document.getElementById('newUserName').value='';
+        msg(name+' için '+ROLES[role]+' rolü atandı','s');
+        loadUserList();
+    }catch(e){msg('Hata: '+e.message,'w')}
+}
+
+// İlk kullanıcıları otomatik oluştur (sadece ilk seferde)
+async function ensureDefaultUsers(){
+    if(currentUserRole!=='admin')return;
+    const defaults=[
+        {email:'ismail@ozisik.com',role:'admin',name:'İsmail Artan'},
+        {email:'duygu@ozisik.com',role:'tekniker',name:'Duygu Durmaz'},
+        {email:'cigdem@ozisik.com',role:'tekniker',name:'Çiğdem İnci'}
+    ];
+    for(const u of defaults){
+        const docId=u.email.replace(/[@.]/g,'_');
+        const doc=await db.collection('users').doc(docId).get();
+        if(!doc.exists){
+            await db.collection('users').doc(docId).set({...u,createdAt:new Date().toISOString()});
+        }
+    }
+}
 function expData(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ozisik_'+new Date().toISOString().split('T')[0]+'.json';a.click()}
 function impData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{S={...S,...JSON.parse(ev.target.result)};save();renderAll();msg('Aktarıldı','s')}catch(err){msg('Hata!','w')}};r.readAsText(f)}
 
@@ -2777,6 +3064,9 @@ function enterSection(section){
         document.getElementById('landingPage').style.display='none';
         document.getElementById('mainApp').style.display='block';
         init();
+        if(currentUserRole)applyRoleRestrictions(currentUserRole);
+        showUserInfo();
+        if(currentUserRole==='admin'){loadUserList();ensureDefaultUsers();}
     }else if(section==='kasar'){
         const la=document.getElementById('landingAlert');
         la.innerHTML='<div style="padding:12px 24px;background:rgba(192,25,43,.1);border:1px solid rgba(192,25,43,.2);border-radius:10px;color:#c0192b;font-family:Outfit;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.1)">🧈 Kaşar Peyniri bölümü yakında aktif olacaktır.</div>';
@@ -2787,6 +3077,7 @@ function enterSection(section){
 function goHome(){
     document.getElementById('mainApp').style.display='none';
     document.getElementById('landingPage').style.display='flex';
+    showUserInfo();
 }
 
 // ===== DRAG & DROP =====
